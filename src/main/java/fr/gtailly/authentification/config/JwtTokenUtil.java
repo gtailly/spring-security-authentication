@@ -12,6 +12,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * JwtTokenUtil
+ * It allows you to create/valid/decrypt token
+ *
+ * @author Grégory TAILLY
+ */
 @Component
 public class JwtTokenUtil {
 
@@ -20,40 +26,64 @@ public class JwtTokenUtil {
     @Value("${jwt.secret}")
     private String secret;
 
-    //retrieve username from jwt token
-    public String getUsernameFromToken(String token) {
+    /**
+     * Retrieve subject from token
+     * @param token {@link String}
+     * @return {@link String}
+     */
+    public String getUsernameFromToken(final String token) {
         return this.getClaimFromToken(token, Claims::getSubject);
     }
 
-    //retrieve expiration date from jwt token
-    public Date getExpirationDateFromToken(String token) {
+    /**
+     * Retrieve expiration date from token
+     * @param token {@link String}
+     * @return {@link Date}
+     */
+    public Date getExpirationDateFromToken(final String token) {
         return this.getClaimFromToken(token, Claims::getExpiration);
     }
 
-    public <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver) {
+    /**
+     * Retrieve Claims
+     * @param token {@link String}
+     * @param claimsResolver {@link Function}
+     * @param <T>
+     * @return {@link T}
+     */
+    public <T> T getClaimFromToken(final String token, final Function<Claims, T> claimsResolver) {
         final Claims claims = this.getAllClaimsFromToken(token);
         return claimsResolver.apply(claims);
     }
 
-    //generate token for user
-    public String generateToken(UserDetails userDetails) {
-        Map<String, Object> claims = new HashMap<>();
+    /**
+     * Generate a token from user data
+     * @param userDetails {@link UserDetails}
+     * @return {@link String}
+     */
+    public String generateToken(final UserDetails userDetails) {
+        final Map<String, Object> claims = new HashMap<>();
         return this.doGenerateToken(claims, userDetails.getUsername());
     }
 
-    //validate token
-    public Boolean validateToken(String token, UserDetails userDetails) {
+    /**
+     * Check if token are valid
+     * @param token {@link String}
+     * @param userDetails {@link UserDetails}
+     * @return {@link Boolean}
+     */
+    public Boolean validateToken(final String token, final UserDetails userDetails) {
         final String username = this.getUsernameFromToken(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
 
-    //while creating the token -
-    //1. Define  claims of the token, like Issuer, Expiration, Subject, and the ID
-    //2. Sign the JWT using the HS512 algorithm and secret key.
-    //3. According to JWS Compact Serialization(https://tools.ietf.org/html/draft-ietf-jose-json-web-signature-41#section-3.1)
-    //   compaction of the JWT to a URL-safe string
-    private String doGenerateToken(Map<String, Object> claims, String subject) {
-
+    /**
+     * While generating the token, define claims of the token like subject, issue data, expiration date and the sign ID
+     * @param claims {@link Map}
+     * @param subject {@link String}
+     * @return {@link String}
+     */
+    private String doGenerateToken(final Map<String, Object> claims, final String subject) {
         return Jwts.builder()
                    .setClaims(claims)
                    .setSubject(subject)
@@ -63,16 +93,14 @@ public class JwtTokenUtil {
                    .compact();
     }
 
-    //for retrieveing any information from token we will need the secret key
-    private Claims getAllClaimsFromToken(String token) {
+    private Claims getAllClaimsFromToken(final String token) {
         return Jwts.parser()
                    .setSigningKey(secret)
                    .parseClaimsJws(token)
                    .getBody();
     }
 
-    //check if the token has expired
-    private Boolean isTokenExpired(String token) {
+    private Boolean isTokenExpired(final String token) {
         final Date expiration = this.getExpirationDateFromToken(token);
         return expiration.before(new Date());
     }

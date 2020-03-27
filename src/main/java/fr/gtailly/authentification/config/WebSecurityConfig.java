@@ -16,6 +16,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+/**
+ * Enable Web Security with his configuration
+ *
+ * @author Grégory TAILLY
+ */
+
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -26,48 +32,62 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     private final UserDetailsService jwtUserDetailsService;
     private final JwtRequestFilter jwtRequestFilter;
 
+    /**
+     * Configure Authentication Manager
+     * It loads user from ServiceDetails in order to matching credentials
+     * @param auth
+     * @throws Exception
+     */
     @Autowired
-    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-        // configure AuthenticationManager so that it knows from where to load
-        // user for matching credentials
-        // Use BCryptPasswordEncoder
+    public void configureGlobal(final AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(this.jwtUserDetailsService)
             .passwordEncoder(passwordEncoder());
     }
 
+    /**
+     * Password encoder
+     * @return {@link PasswordEncoder}
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * Instantiate Authentication Manager bean
+     * @return {@link AuthenticationManager}
+     * @throws Exception
+     */
     @Bean
     @Override
     public AuthenticationManager authenticationManagerBean() throws Exception {
         return super.authenticationManagerBean();
     }
 
+    /**
+     * It allows you to configure what security on each endpoints
+     * Authenticate endpoint is the only one that is not secure
+     * Add a filter for each Call HTTP (JwtRequestFilter)
+     * We don't need CSRF for this example
+     * @param httpSecurity HTTP Security context
+     * @throws Exception
+     */
     @Override
-    protected void configure(HttpSecurity httpSecurity) throws Exception {
-        // We don't need CSRF for this example
+    protected void configure(final HttpSecurity httpSecurity) throws Exception {
         httpSecurity.csrf()
                     .disable()
-                    // dont authenticate this particular request
                     .authorizeRequests()
                     .antMatchers("/authenticate")
                     .permitAll()
-                    // all other requests need to be authenticated
                     .anyRequest()
                     .authenticated()
                     .and()
-                    // make sure we use stateless session; session won't be used to
-                    // store user's state.
                     .exceptionHandling()
                     .authenticationEntryPoint(this.jwtAuthenticationEntryPoint)
                     .and()
                     .sessionManagement()
                     .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
-        // Add a filter to validate the tokens with every request
         httpSecurity.addFilterBefore(this.jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
     }
 }
