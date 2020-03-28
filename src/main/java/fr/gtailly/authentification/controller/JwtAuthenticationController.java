@@ -4,7 +4,7 @@ import fr.gtailly.authentification.config.JwtTokenUtil;
 import fr.gtailly.authentification.model.JwtRequest;
 import fr.gtailly.authentification.model.JwtResponse;
 import fr.gtailly.authentification.service.JwtUserDetailsService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -12,34 +12,44 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * JwtAuthenticationController
+ *
+ * @author Grégory TAILLY
+ */
 @RestController
 @CrossOrigin
+@RequiredArgsConstructor
 public class JwtAuthenticationController {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
-    @Autowired
-    private JwtTokenUtil jwtTokenUtil;
-    @Autowired
-    private JwtUserDetailsService userDetailsService;
+    private final AuthenticationManager authenticationManager;
+    private final JwtTokenUtil jwtTokenUtil;
+    private final JwtUserDetailsService userDetailsService;
 
-    @RequestMapping(value = "/authenticate", method = RequestMethod.POST)
-    public ResponseEntity<?> createAuthenticationToken(@RequestBody JwtRequest authenticationRequest) throws Exception {
-        authenticate(authenticationRequest.getUsername(), authenticationRequest.getPassword());
-        final UserDetails userDetails = userDetailsService
-                                            .loadUserByUsername(authenticationRequest.getUsername());
-        final String token = jwtTokenUtil.generateToken(userDetails);
+    /**
+     * It allows you to authenticate an user for this API
+     * It provides a valid token
+     * @param jwtRequest {@link JwtRequest}
+     * @return {@link JwtResponse}
+     * @throws Exception
+     */
+    @PostMapping(value = "/authenticate")
+    public ResponseEntity<JwtResponse> createAuthenticationToken(@RequestBody final JwtRequest jwtRequest) throws Exception {
+        this.authenticate(jwtRequest.getUsername(), jwtRequest.getPassword());
+        final UserDetails userDetails = this.userDetailsService
+                                            .loadUserByUsername(jwtRequest.getUsername());
+        final String token = this.jwtTokenUtil.generateToken(userDetails);
+
         return ResponseEntity.ok(new JwtResponse(token));
     }
 
-    private void authenticate(String username, String password) throws Exception {
+    private void authenticate(final String username, final String password) throws Exception {
         try {
-            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+            this.authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
         } catch (DisabledException e) {
             throw new Exception("USER_DISABLED", e);
         } catch (BadCredentialsException e) {
