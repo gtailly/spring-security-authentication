@@ -1,14 +1,14 @@
 # Spring Security Example
 
 This spring boot application resumes the tutorial of "javainuse" \
-See the original tutorial at this link : https://www.javainuse.com/spring/boot-jwt
+Refer to the original tutorial at this link : https://www.javainuse.com/spring/boot-jwt
 
 ## How does it work ? 
 In our case, we have two endpoints : 
 > /authenticate - not secured\
-> /hello - secured\
+> /hello - secured
 
-In order to call `/hello`, you have to provide a valid token. Otherwise, we obtain an Authorized exception\
+In order to call `/hello`, you have to provide a valid token. Otherwise, we obtain an Unauthorized exception\
 To generate this, you have to call `/authenticate` with your login and password
 
 Then, when you get a token, you can call `/hello` with an `Authorization` header which it will start by Bearer and then THE valid token.
